@@ -19,7 +19,8 @@ fun YellowButton(
         onClick = onClick, enabled = enabled, modifier = modifier,
         colors = ButtonDefaults.elevatedButtonColors(
             containerColor = ActiveComponentColor,
-            disabledContainerColor = Color(0xFF34312F)
+            disabledContainerColor = Color(0xFF34312F),
+            contentColor = Color.Black
         )
     ) {
         Text(buttonText)
