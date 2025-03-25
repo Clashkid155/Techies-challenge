@@ -1,6 +1,11 @@
 package com.dizz.techie.ui.screen
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,8 +25,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -33,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -75,15 +84,12 @@ private enum class SelectedButton {
 
 @Composable
 fun DateSelectorScreen(modifier: Modifier = Modifier) {
-    val buttonEnabled by remember {
+    val nextPage by remember {
         mutableStateOf(false)
     }
-    /*  val dateSelected by remember {
-          mutableStateOf(false)
-      }*/
-    var daySelected by remember {
-        mutableIntStateOf(0)
-    }
+    val pager = rememberPagerState { 2 }
+    var button by remember { mutableStateOf(SelectedButton.None) }
+
     Column(
         modifier
             .systemBarsPadding()
@@ -91,6 +97,13 @@ fun DateSelectorScreen(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .padding(horizontal = 12.dp), horizontalAlignment = Alignment.Start
     ) {
+        Icon(
+            Icons.Default.Close,
+            null,
+            Modifier.align(Alignment.Start),
+            tint = InactiveComponentColor
+        )
+        Spacer(Modifier.height(28.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painterResource(R.drawable.the_bad_guys),
@@ -106,10 +119,52 @@ fun DateSelectorScreen(modifier: Modifier = Modifier) {
             Spacer(Modifier.width(12.dp))
             TittleAndDetail(Modifier.height(100.dp))
         }
-        Spacer(Modifier.height(24.dp))
+
+        Spacer(Modifier.height(28.dp))
         HorizontalDivider()
         Spacer(Modifier.height(24.dp))
-        Text("When to watch?")
+        HorizontalPager(pager, Modifier.weight(.7f)) { pageIndex ->
+            when (pageIndex) {
+                0 -> WhenToWatch(continueButton = button) {
+                    button = it
+                }
+
+                1 -> WhosGoing()
+            }
+        }
+        /* WhenToWatch(Modifier.weight(.5f),continueButton = button) {
+             button = it
+         }*/
+        YellowButton(
+            Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            buttonText = "Continue",
+            enabled = button != SelectedButton.None
+        ) { }
+        Spacer(Modifier.height(12.dp))
+    }
+}
+
+
+@Composable
+private fun WhenToWatch(
+    modifier: Modifier = Modifier,
+    continueButton: SelectedButton,
+    onClicked: (SelectedButton) -> Unit
+) {
+    val buttonEnabled by remember {
+        mutableStateOf(false)
+    }
+    /*  val dateSelected by remember {
+          mutableStateOf(false)
+      }*/
+    var daySelected by remember {
+        mutableIntStateOf(0)
+    }
+    Column(modifier) {
+
+        Text("When to watch?", fontSize = 20.sp)
         Text("Select date and time")
         Spacer(Modifier.height(24.dp))
         DaysIndicator(daySelected) {
@@ -119,31 +174,82 @@ fun DateSelectorScreen(modifier: Modifier = Modifier) {
 
         AnimatedContent(
             daySelected != 0,
-            Modifier.weight(.5f)
+            Modifier.fillMaxHeight(.94f),
+            transitionSpec = {
+
+                if (daySelected == 0) {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                        spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessVeryLow)
+                    ) togetherWith
+                            fadeOut()
+                } else {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                        spring(dampingRatio = 0.85f)
+                    ) togetherWith fadeOut()
+
+                    /* using
+                                                SizeTransform { initialSize, targetSize ->
+                                                    if (targetState) {
+                                                        keyframes {
+                                                            // Expand horizontally first.
+                                                            IntSize(targetSize.width, initialSize.height) at 150
+                                                            durationMillis = 300
+                                                        }
+                                                    } else {
+                                                        keyframes {
+                                                            // Shrink vertically first.
+                                                            IntSize(initialSize.width, targetSize.height) at 150
+                                                            durationMillis = 300
+                                                        }
+                                                    }
+                                                }*/
+                }
+            }
         ) {
             when (it) {
                 false -> Text(
                     "Select a day to see the\n available showtime",
-                    modifier = Modifier.fillMaxWidth()
-//                        .weight(.5f)
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .wrapContentHeight()
                         .align(Alignment.CenterHorizontally),
                     textAlign = TextAlign.Center
                 )
 
-                true -> TimeButtons()
+                true -> TimeButtons(continueButton) { bState -> onClicked(bState) }
             }
         }
-        Spacer(Modifier.height(12.dp))
+//        Spacer(Modifier.height(12.dp))
 
-        YellowButton(
-            Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            buttonText = "Continue",
-            enabled = buttonEnabled
-        ) { }
-        Spacer(Modifier.height(12.dp))
+    }
+}
+
+@Composable
+private fun WhosGoing(
+    modifier: Modifier = Modifier,
+//    continueButton: SelectedButton,
+//    onClicked: (SelectedButton) -> Unit
+) {
+    val buttonEnabled by remember {
+        mutableStateOf(false)
+    }
+    /*  val dateSelected by remember {
+          mutableStateOf(false)
+      }*/
+    var daySelected by remember {
+        mutableIntStateOf(0)
+    }
+    Column(modifier, verticalArrangement = Arrangement.Top) {
+
+        Text("Who's going?", fontSize = 20.sp)
+        Text("Select ticket amount")
+        Spacer(Modifier.height(24.dp))
+
+
+//        Spacer(Modifier.height(12.dp))
+
     }
 }
 
@@ -162,6 +268,7 @@ private fun TittleAndDetail(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(painterResource(R.drawable.imdb_logo), null, modifier = Modifier.size(38.dp))
+            Spacer(Modifier.width(8.dp))
             Text("7.7", fontSize = 14.sp)
         }
     }
@@ -201,73 +308,9 @@ private fun DaysIndicator(daySelected: Int, onClicked: (Int) -> Unit) {
 
 
 @Composable
-fun TimeButtons() {
+private fun TimeButtons(buttonState: SelectedButton, onClicked: (SelectedButton) -> Unit) {
 
-    var button by remember { mutableStateOf(SelectedButton.None) }
-    /*  Spacer(
-          Modifier
-              .fillMaxWidth()
-              .height(50.dp)
-              .drawBehind {
-                  val width = size.width
-                  val height = size.height
-                  val cornerRadius = CornerRadius(100f, 100f)
-                  val cornerRadiusMin = CornerRadius(10f, 10f)
 
-                  val secondDrawFraction = 3.5f
-                  val secondWidth = width - (width / secondDrawFraction)
-                  val gap = 20f
-
-                  *//* drawRoundRect(Color.Green, size = Size(width / 2, height))
-                 *//**//*     val secondDrawFraction = 3.5f
-             val secondWidth = width - (width / secondDrawFraction)
-             drawRoundRect(
-                 Color.Blue,
-                 size = Size(width / secondDrawFraction, height),
-                 topLeft = Offset(secondWidth, 0f),
-                 cornerRadius = CornerRadius(50f, 50f)
-             ) *//**//*
-
-        drawRoundRect(
-            Color.Blue,
-            size = Size(width / secondDrawFraction, height),
-            topLeft = Offset(secondWidth, 0f),
-        )*//*
-
-                val firstPath = Path().apply {
-                    addRoundRect(
-                        RoundRect(
-                            rect = Rect(
-                                size = Size(secondWidth - gap, height),
-                                offset = Offset.Zero,
-
-                                ),
-                            topLeft = cornerRadius,
-                            bottomLeft = cornerRadius,
-                            topRight = cornerRadiusMin,
-                            bottomRight = cornerRadiusMin
-                        )
-                    )
-                }
-                drawPath(firstPath, ActiveComponentColor)
-                val secondPath = Path().apply {
-                    addRoundRect(
-                        RoundRect(
-                            rect = Rect(
-                                size = Size(width / secondDrawFraction, height),
-                                offset = Offset(secondWidth, 0f),
-
-                                ),
-                            topRight = cornerRadius,
-                            bottomRight = cornerRadius,
-                            topLeft = cornerRadiusMin,
-                            bottomLeft = cornerRadiusMin
-                        )
-                    )
-                }
-                drawPath(secondPath, InactiveComponentColor)
-
-            })*/
     Column {
         TimeButton(
             "10:45 AM",
@@ -275,35 +318,34 @@ fun TimeButtons() {
                 .fillMaxWidth()
                 .height(50.dp)
                 .clickable(null, null) {
-                    button = SelectedButton.setValue(button, SelectedButton.First)
+
+                    onClicked(SelectedButton.setValue(buttonState, SelectedButton.First))
                 },
             sizing = 1.8f,
-            onTapped = button == SelectedButton.First
+            onTapped = buttonState == SelectedButton.First
         )
         Spacer(Modifier.height(8.dp))
-
         TimeButton(
             "03:45 AM",
             Modifier
                 .fillMaxWidth()
                 .height(50.dp)
                 .clickable(null, null) {
-                    button = SelectedButton.setValue(button, SelectedButton.Second)
+                    onClicked(SelectedButton.setValue(buttonState, SelectedButton.Second))
                 },
-            onTapped = button == SelectedButton.Second
+            onTapped = buttonState == SelectedButton.Second
         )
         Spacer(Modifier.height(8.dp))
-
         TimeButton(
             "09:00 PM",
             Modifier
                 .fillMaxWidth()
                 .height(50.dp)
                 .clickable(null, null) {
-                    button = SelectedButton.setValue(button, SelectedButton.Third)
+                    onClicked(SelectedButton.setValue(buttonState, SelectedButton.Third))
                 },
             sizing = 1.5f,
-            onTapped = button == SelectedButton.Third
+            onTapped = buttonState == SelectedButton.Third
         )
     }
 }
