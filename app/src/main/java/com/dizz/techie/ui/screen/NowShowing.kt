@@ -1,5 +1,8 @@
 package com.dizz.techie.ui.screen
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,78 +31,99 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.dizz.techie.R
 import com.dizz.techie.ui.YellowButton
-import com.dizz.techie.ui.theme.Techie_1Theme
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun NowShowingScreen(modifier: Modifier = Modifier) {
-    Column(
-        modifier
-            .fillMaxSize()
-            .systemBarsPadding()
-            .padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row {
-            Text("Now showing")
-            Spacer(Modifier.width(8.dp))
-//            Icon(Icons.Default.ArrowDropDown, null)
-            Icon(
-                painterResource(R.drawable.arrow),
-                null,
-                modifier = Modifier
-                    .rotate(90f)
-                    .size(12.dp).align(Alignment.CenterVertically)
-            )
-            Spacer(Modifier.weight(0.8f))
-            Icon(Icons.Default.Face, null)
-        }
-        Spacer(Modifier.height(12.dp))
-        Image(
-            painterResource(R.drawable.the_bad_guys),
-            "Movie image",
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(.5f)
-                .clip(RoundedCornerShape(topStart = 45.dp, topEnd = 45.dp)),
-            contentScale = ContentScale.FillBounds
-        )
-        Text("2025 • Animation • 96 min")
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically
+fun NowShowingScreen(
+    modifier: Modifier = Modifier, sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope, onBuy: () -> Unit
+) {
+    with(sharedTransitionScope) {
+        val sharedKey = rememberSharedContentState(key = "layout")
+
+        Column(
+            modifier
+                .fillMaxSize()
+                .sharedBounds(sharedKey, animatedVisibilityScope)
+
+                .padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(painterResource(R.drawable.imdb_logo), null, modifier = Modifier.size(45.dp))
-            Text("7.7")
-        }
-        Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            YellowButton(Modifier.width(60.dp), "Buy Tickets") { }
-            Spacer(Modifier.width(12.dp))
-            Box(
-                Modifier
-                    .size(50.dp)
-                    .background(
-                        Color(0xFF34312F), CircleShape
-                    ), contentAlignment = Alignment.Center
-            ) {
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Now showing", fontSize = 20.sp)
+                Spacer(Modifier.width(8.dp))
+                //            Icon(Icons.Default.ArrowDropDown, null)
                 Icon(
-                    Icons.Default.PlayArrow, null, tint = Color.White
+                    painterResource(R.drawable.arrow),
+                    null,
+                    modifier = Modifier
+                        .rotate(90f)
+                        .size(12.dp)
+//                        .align(Alignment.CenterVertically)
                 )
+                Spacer(Modifier.weight(0.8f))
+                Icon(Icons.Default.Face, null)
             }
+            Spacer(Modifier.height(16.dp))
+
+            Image(
+                painterResource(R.drawable.the_bad_guys),
+                "Movie image",
+                modifier = Modifier
+                    .sharedElement(
+                        rememberSharedContentState(key = "image"),
+                        animatedVisibilityScope = animatedVisibilityScope,
+//                        placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize
+//                        enter = scaleIn() + fadeIn(),
+//                        exit =  fadeOut()+scaleOut()
+                    )
+                    .fillMaxWidth()
+                    .weight(.5f)
+                    .clip(RoundedCornerShape(topStart = 45.dp, topEnd = 45.dp)),
+                contentScale = ContentScale.FillBounds
+            )
+            Text("2025 • Animation • 96 min", fontSize = 14.sp, color = Color.LightGray)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(painterResource(R.drawable.imdb_logo), null, modifier = Modifier.size(40.dp))
+                Text("7.7", fontSize = 14.sp, color = Color.LightGray)
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                YellowButton(Modifier.height(50.dp), "Buy Tickets") {
+                    onBuy()
+                }
+                Spacer(Modifier.width(12.dp))
+                Box(
+                    Modifier
+                        .size(50.dp)
+                        .background(
+                            Color(0xFF34312F), CircleShape
+                        ), contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow, null, tint = Color.White
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
         }
     }
 
 }
 
 
-@Preview(showBackground = true, showSystemUi = true)
+/*@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun GreetingPreview() {
     Techie_1Theme {
-        NowShowingScreen()
+        NowShowingScreen(){}
     }
-}
+}*/

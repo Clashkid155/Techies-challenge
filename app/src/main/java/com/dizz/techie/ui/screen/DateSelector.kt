@@ -1,8 +1,13 @@
 package com.dizz.techie.ui.screen
 
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -10,6 +15,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,14 +25,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -51,20 +54,25 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.ImageLoader
+import coil3.compose.AsyncImage
+import coil3.gif.AnimatedImageDecoder
+import coil3.gif.GifDecoder
 import com.dizz.techie.R
 import com.dizz.techie.ui.YellowButton
 import com.dizz.techie.ui.theme.ActiveComponentColor
 import com.dizz.techie.ui.theme.InactiveComponentColor
-import com.dizz.techie.ui.theme.Techie_1Theme
 
 
 private enum class SelectedButton {
@@ -82,68 +90,124 @@ private enum class SelectedButton {
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun DateSelectorScreen(modifier: Modifier = Modifier) {
-    val nextPage by remember {
+fun DateSelectorScreen(
+    modifier: Modifier = Modifier, sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope, onCancel: () -> Unit
+) {
+    var nextPage by remember {
         mutableStateOf(false)
     }
-    val pager = rememberPagerState { 2 }
     var button by remember { mutableStateOf(SelectedButton.None) }
+
+
+    val buttonScaleAnimation = animateFloatAsState(if (nextPage) 2f else 1f)
 
     Column(
         modifier
-            .systemBarsPadding()
-            .navigationBarsPadding()
             .fillMaxSize()
             .padding(horizontal = 12.dp), horizontalAlignment = Alignment.Start
     ) {
         Icon(
             Icons.Default.Close,
             null,
-            Modifier.align(Alignment.Start),
-            tint = InactiveComponentColor
+            Modifier
+                .align(Alignment.Start)
+                .clickable { onCancel() },
+            tint = Color.Gray
         )
         Spacer(Modifier.height(28.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painterResource(R.drawable.the_bad_guys),
-                "Movie logo",
-                modifier = Modifier
-                    .size(120.dp, 100.dp)
-                    .clip(
-                        RoundedCornerShape(20.dp)
-                    ),
-                contentScale = ContentScale.None,
-                alignment = Alignment.TopCenter
-            )
-            Spacer(Modifier.width(12.dp))
-            TittleAndDetail(Modifier.height(100.dp))
+        with(sharedTransitionScope) {
+            val sharedKey = rememberSharedContentState(key = "layout")
+            Row(
+                Modifier
+                    .sharedBounds(sharedKey, animatedVisibilityScope)
+                    .fillMaxWidth()
+                    .height(100.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
+
+                Image(
+                    painterResource(R.drawable.the_bad_guys),
+                    "Movie logo",
+                    modifier = Modifier
+                        .sharedElement(
+                            rememberSharedContentState(key = "image"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+//                            placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize,
+
+                            /*   enter = expandVertically() + scaleIn(
+                                   tween(delayMillis = 90),
+                               ),
+                               resizeMode = *//*RemeasureToBounds,*//*
+                            ScaleToBounds(
+                                ContentScale.None,
+                                Alignment.BottomStart
+                            ),*/
+                            zIndexInOverlay = 1f,
+                            renderInOverlayDuringTransition = false,
+                            clipInOverlayDuringTransition = sharedTransitionScope.OverlayClip(
+                                RoundedCornerShape(20.dp)
+                            )
+
+                        )
+//                        .wrapContentWidth(Alignment.Start)
+
+                        /* .sharedElement(sharedKey,
+                             animatedVisibilityScope = animatedVisibilityScope,
+                             placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize
+                       )*/
+
+                        /*  .sharedElement(
+                              sharedKey, animatedVisibilityScope = animatedVisibilityScope,
+  //                            renderInOverlayDuringTransition = false,
+                              boundsTransform = { _, _ -> tween() },
+                              zIndexInOverlay = 1f,
+                              placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize
+
+                          )*/
+                        .width(120.dp)
+                        .clip(
+                            RoundedCornerShape(20.dp)
+                        ),
+                    contentScale = ContentScale.None,
+                    alignment = Alignment.TopCenter
+                )
+                Spacer(Modifier.width(12.dp))
+                TittleAndDetail(Modifier.fillMaxSize())
+            }
         }
 
-        Spacer(Modifier.height(28.dp))
-        HorizontalDivider()
-        Spacer(Modifier.height(24.dp))
-        HorizontalPager(pager, Modifier.weight(.7f)) { pageIndex ->
+        Spacer(Modifier.height(32.dp))
+        HorizontalDivider(thickness = .7.dp)
+        Spacer(Modifier.height(32.dp))
+        AnimatedContent(nextPage, Modifier.weight(.7f)) { pageIndex ->
             when (pageIndex) {
-                0 -> WhenToWatch(continueButton = button) {
+                false -> WhenToWatch(continueButton = button) {
                     button = it
                 }
 
-                1 -> WhosGoing()
+                true -> WhosGoing()
             }
         }
-        /* WhenToWatch(Modifier.weight(.5f),continueButton = button) {
-             button = it
-         }*/
         YellowButton(
             Modifier
                 .fillMaxWidth()
-                .height(50.dp),
+                .height(50.dp)
+                .scale(buttonScaleAnimation.value)
+                .pointerInput(Unit) {
+                    this.detectTapGestures(onPress = {
+
+                    })
+                },
             buttonText = "Continue",
             enabled = button != SelectedButton.None
-        ) { }
+        ) { nextPage = !nextPage }
         Spacer(Modifier.height(12.dp))
     }
+
 }
 
 
@@ -153,9 +217,7 @@ private fun WhenToWatch(
     continueButton: SelectedButton,
     onClicked: (SelectedButton) -> Unit
 ) {
-    val buttonEnabled by remember {
-        mutableStateOf(false)
-    }
+
     /*  val dateSelected by remember {
           mutableStateOf(false)
       }*/
@@ -165,7 +227,7 @@ private fun WhenToWatch(
     Column(modifier) {
 
         Text("When to watch?", fontSize = 20.sp)
-        Text("Select date and time")
+        Text("Select date and time", fontSize = 12.sp)
         Spacer(Modifier.height(24.dp))
         DaysIndicator(daySelected) {
             daySelected = it
@@ -215,7 +277,8 @@ private fun WhenToWatch(
                         .fillMaxWidth()
                         .wrapContentHeight()
                         .align(Alignment.CenterHorizontally),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    fontSize = 12.sp, color = Color.LightGray
                 )
 
                 true -> TimeButtons(continueButton) { bState -> onClicked(bState) }
@@ -235,20 +298,30 @@ private fun WhosGoing(
     val buttonEnabled by remember {
         mutableStateOf(false)
     }
-    /*  val dateSelected by remember {
-          mutableStateOf(false)
-      }*/
     var daySelected by remember {
         mutableIntStateOf(0)
     }
+    val gifEnabledLoader = ImageLoader.Builder(LocalContext.current)
+        .components {
+
+            if (SDK_INT >= 28) {
+                add(AnimatedImageDecoder.Factory())
+            } else {
+                add(GifDecoder.Factory())
+            }
+        }.build()
     Column(modifier, verticalArrangement = Arrangement.Top) {
 
         Text("Who's going?", fontSize = 20.sp)
         Text("Select ticket amount")
         Spacer(Modifier.height(24.dp))
+        AsyncImage(
+            model = R.drawable.head_blown, null,
+            imageLoader = gifEnabledLoader, modifier = Modifier
+                .size(200.dp)
+                .background(Color.Red)
+        )
 
-
-//        Spacer(Modifier.height(12.dp))
 
     }
 }
@@ -262,14 +335,14 @@ private fun TittleAndDetail(modifier: Modifier = Modifier) {
             modifier = Modifier.size(48.dp),
         )
         Spacer(Modifier.height(4.dp))
-        Text("2025 • Animation • 96 min", fontSize = 14.sp)
+        Text("2025 • Animation • 96 min", fontSize = 12.sp, color = Color.LightGray)
         Row(
             horizontalArrangement = Arrangement.Start,//Arrangement.spacedBy(8.dp, Alignment.Start),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(painterResource(R.drawable.imdb_logo), null, modifier = Modifier.size(38.dp))
             Spacer(Modifier.width(8.dp))
-            Text("7.7", fontSize = 14.sp)
+            Text("7.7", fontSize = 12.sp, color = Color.LightGray)
         }
     }
 }
@@ -288,7 +361,8 @@ private fun DaysIndicator(daySelected: Int, onClicked: (Int) -> Unit) {
                             if (daySelected == it) ActiveComponentColor else InactiveComponentColor
                         )
                         .clickable { /*daySelected = it */
-                            onClicked(it)
+                            if (it != 15)
+                                onClicked(it)
                         }, contentAlignment = Alignment.Center
                 ) {
                     if (it == 15) Icon(
@@ -297,10 +371,19 @@ private fun DaysIndicator(daySelected: Int, onClicked: (Int) -> Unit) {
                         modifier = Modifier
                             .rotate(90f)
                             .size(16.dp), tint = Color.White
-                    ) else Text(it.toString(), color = Color.White)
+                    ) else Text(
+                        it.toString(),
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (it == 11) Color.Gray else if (daySelected == it) Color.Black else Color.White
+                    )
                 }
                 Spacer(Modifier.height(8.dp))
-                if (it != 15) Text(days[index])
+                if (it != 15) Text(
+                    days[index],
+                    color = if (daySelected == it) Color.White else Color.Gray,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -309,8 +392,6 @@ private fun DaysIndicator(daySelected: Int, onClicked: (Int) -> Unit) {
 
 @Composable
 private fun TimeButtons(buttonState: SelectedButton, onClicked: (SelectedButton) -> Unit) {
-
-
     Column {
         TimeButton(
             "10:45 AM",
@@ -326,7 +407,7 @@ private fun TimeButtons(buttonState: SelectedButton, onClicked: (SelectedButton)
         )
         Spacer(Modifier.height(8.dp))
         TimeButton(
-            "03:45 AM",
+            "03:45 PM",
             Modifier
                 .fillMaxWidth()
                 .height(50.dp)
@@ -404,7 +485,11 @@ fun TimeButton(
         drawPath(secondPath, InactiveComponentColor)
         val textLayout = textMeasurer.measure(
             text,
-            TextStyle(fontSize = 16.sp, color = if (onTapped) Color.Black else Color.White)
+            TextStyle(
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (onTapped) Color.Black else Color.White
+            )
         )
         val textSize = textLayout.size
         // Use 9.4% of the width
@@ -413,10 +498,11 @@ fun TimeButton(
     }
 }
 
+/*
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun DateSelectorPreview() {
     Techie_1Theme {
-        DateSelectorScreen()
+        DateSelectorScreen(){}
     }
-}
+}*/
