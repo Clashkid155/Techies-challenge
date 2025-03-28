@@ -37,6 +37,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -71,7 +72,7 @@ import coil3.compose.AsyncImage
 import coil3.gif.AnimatedImageDecoder
 import coil3.gif.GifDecoder
 import com.dizz.techie.R
-import com.dizz.techie.ui.YellowButton
+import com.dizz.techie.ui.ScalableYellowButton
 import com.dizz.techie.ui.theme.ActiveComponentColor
 import com.dizz.techie.ui.theme.InactiveComponentColor
 
@@ -106,8 +107,11 @@ fun DateSelectorScreen(
         mutableIntStateOf(0)
     }
 
-
-    val buttonScaleAnimation = animateFloatAsState(if (nextPage) 2f else 1f)
+    val buttonScaleAnimation =
+        animateFloatAsState(
+            if (buttonPressed) .9f else 1f,
+            animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessVeryLow)
+        )
 
     Column(
         modifier
@@ -200,19 +204,22 @@ fun DateSelectorScreen(
                 true -> WhosGoing()
             }
         }
-        YellowButton(
+        ScalableYellowButton(
             Modifier
                 .fillMaxWidth()
                 .height(50.dp)
                 .scale(buttonScaleAnimation.value)
                 .pointerInput(Unit) {
-                    this.detectTapGestures(onPress = {
-
+                    detectTapGestures(onPress = {
+                        if (button != SelectedButton.None) {
+                            buttonPressed = true
+                            tryAwaitRelease()
+                            buttonPressed = false
+                            nextPage = !nextPage
+                        }
                     })
-                },
-            buttonText = "Continue",
-            enabled = button != SelectedButton.None
-        ) { nextPage = !nextPage }
+                }, button != SelectedButton.None
+        )
         Spacer(Modifier.height(12.dp))
     }
 
