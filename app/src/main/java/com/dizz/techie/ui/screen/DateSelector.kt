@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -96,10 +97,14 @@ fun DateSelectorScreen(
     modifier: Modifier = Modifier, sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope, onCancel: () -> Unit
 ) {
-    var nextPage by remember {
+    var nextPage by rememberSaveable {
         mutableStateOf(false)
     }
     var button by remember { mutableStateOf(SelectedButton.None) }
+    var buttonPressed by remember { mutableStateOf(false) }
+    var daySelected by rememberSaveable {
+        mutableIntStateOf(0)
+    }
 
 
     val buttonScaleAnimation = animateFloatAsState(if (nextPage) 2f else 1f)
@@ -185,7 +190,10 @@ fun DateSelectorScreen(
         Spacer(Modifier.height(32.dp))
         AnimatedContent(nextPage, Modifier.weight(.7f)) { pageIndex ->
             when (pageIndex) {
-                false -> WhenToWatch(continueButton = button) {
+                false -> WhenToWatch(
+                    continueButton = button,
+                    daySelected = daySelected,
+                    onDayChanged = { daySelected = it }) {
                     button = it
                 }
 
@@ -215,22 +223,17 @@ fun DateSelectorScreen(
 private fun WhenToWatch(
     modifier: Modifier = Modifier,
     continueButton: SelectedButton,
+    daySelected: Int,
+    onDayChanged: (Int) -> Unit,
     onClicked: (SelectedButton) -> Unit
 ) {
-
-    /*  val dateSelected by remember {
-          mutableStateOf(false)
-      }*/
-    var daySelected by remember {
-        mutableIntStateOf(0)
-    }
     Column(modifier) {
 
         Text("When to watch?", fontSize = 20.sp)
         Text("Select date and time", fontSize = 12.sp)
         Spacer(Modifier.height(24.dp))
         DaysIndicator(daySelected) {
-            daySelected = it
+            onDayChanged(it)
         }
         Spacer(Modifier.height(24.dp))
 
@@ -269,8 +272,8 @@ private fun WhenToWatch(
                                                 }*/
                 }
             }
-        ) {
-            when (it) {
+        ) { changeScreen ->
+            when (changeScreen) {
                 false -> Text(
                     "Select a day to see the\n available showtime",
                     modifier = Modifier
