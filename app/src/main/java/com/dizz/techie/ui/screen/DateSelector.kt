@@ -6,10 +6,14 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -37,8 +41,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -143,7 +148,7 @@ fun DateSelectorScreen(
                     "Movie logo",
                     modifier = Modifier
                         .sharedElement(
-                            rememberSharedContentState(key = "image"),
+                            rememberSharedContentState(key = "movie_logo"),
                             animatedVisibilityScope = animatedVisibilityScope,
 //                            placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize,
 
@@ -189,10 +194,18 @@ fun DateSelectorScreen(
             }
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(36.dp))
         HorizontalDivider(thickness = .7.dp)
-        Spacer(Modifier.height(32.dp))
-        AnimatedContent(nextPage, Modifier.weight(.7f)) { pageIndex ->
+        Spacer(Modifier.height(36.dp))
+        AnimatedContent(nextPage, Modifier.weight(.7f), transitionSpec = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Right,
+                spring(Spring.DampingRatioNoBouncy, Spring.StiffnessMediumLow)
+            ) + fadeIn() togetherWith slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Left,
+                spring(Spring.DampingRatioNoBouncy, Spring.StiffnessMediumLow)
+            ) + fadeOut()
+        }) { pageIndex ->
             when (pageIndex) {
                 false -> WhenToWatch(
                     continueButton = button,
@@ -201,7 +214,7 @@ fun DateSelectorScreen(
                     button = it
                 }
 
-                true -> WhosGoing()
+                true -> WhoGoes()
             }
         }
         ScalableYellowButton(
@@ -235,10 +248,9 @@ private fun WhenToWatch(
     onClicked: (SelectedButton) -> Unit
 ) {
     Column(modifier) {
-
-        Text("When to watch?", fontSize = 20.sp)
-        Text("Select date and time", fontSize = 12.sp)
-        Spacer(Modifier.height(24.dp))
+        Text("When to Watch?", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+        Text("Select date and time", fontSize = 12.sp, color = Color.LightGray)
+        Spacer(Modifier.height(32.dp))
         DaysIndicator(daySelected) {
             onDayChanged(it)
         }
@@ -294,45 +306,192 @@ private fun WhenToWatch(
                 true -> TimeButtons(continueButton) { bState -> onClicked(bState) }
             }
         }
-//        Spacer(Modifier.height(12.dp))
 
     }
 }
 
 @Composable
-private fun WhosGoing(
+private fun WhoGoes(
     modifier: Modifier = Modifier,
-//    continueButton: SelectedButton,
-//    onClicked: (SelectedButton) -> Unit
 ) {
-    val buttonEnabled by remember {
-        mutableStateOf(false)
-    }
-    var daySelected by remember {
-        mutableIntStateOf(0)
-    }
-    val gifEnabledLoader = ImageLoader.Builder(LocalContext.current)
-        .components {
 
-            if (SDK_INT >= 28) {
-                add(AnimatedImageDecoder.Factory())
-            } else {
-                add(GifDecoder.Factory())
+    var ticketAmount by remember { mutableIntStateOf(1) }
+//    var showImage by remember { mutableStateOf(false) }
+    val gifIds = remember { mutableListOf(R.drawable.smile) }
+    val availableGif = listOf(R.drawable.sunglasses, R.drawable.head_blown)
+
+    val localContext = LocalContext.current
+    val gifEnabledLoader = remember {
+        ImageLoader.Builder(localContext)
+            .components {
+                if (SDK_INT >= 28) {
+                    add(AnimatedImageDecoder.Factory())
+                } else {
+                    add(GifDecoder.Factory())
+                }
+            }.build()
+    }
+
+    /* LaunchedEffect(Unit) {
+         delay(5000)
+         showImage = true
+     }*/
+    Column(modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+        Text("Who's going?", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+        Text("Select ticket amount", fontSize = 12.sp, color = Color.LightGray)
+        Spacer(Modifier.weight(.3f))
+//        Spacer(Modifier.height(32.dp))
+        Column(
+            Modifier
+                .fillMaxSize()
+                .weight(.5f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            AnimatedContent(
+                gifIds,
+                Modifier
+                    .fillMaxWidth(),
+//                    .align(Alignment.CenterHorizontally),
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                }) { items ->
+
+                StackedEmojis(
+                    overLap = .35f,
+                ) {
+                    items.forEach { emoji ->
+                        key(emoji) {
+                            AsyncImage(
+                                model = emoji, null,
+                                imageLoader = gifEnabledLoader,
+                                modifier = Modifier
+                                    .size(160.dp)
+
+
+                            )
+                        }
+
+                    }
+                }
             }
-        }.build()
-    Column(modifier, verticalArrangement = Arrangement.Top) {
+        }
 
-        Text("Who's going?", fontSize = 20.sp)
-        Text("Select ticket amount")
-        Spacer(Modifier.height(24.dp))
-        AsyncImage(
-            model = R.drawable.head_blown, null,
-            imageLoader = gifEnabledLoader, modifier = Modifier
-                .size(200.dp)
-                .background(Color.Red)
+        TicketSelector(
+            Modifier
+                .weight(.5f)
+                .align(Alignment.CenterHorizontally),
+            ticketAmount,
+            onMinus = {
+                if (gifIds.size <= 1) return@TicketSelector
+//                gifIds.removeAt(gifIds.lastIndex)
+                gifIds.removeAt(1)
+                ticketAmount--
+            },
+            onPlus = {
+                gifIds.add(1, availableGif.getOrElse(ticketAmount - 1) { availableGif.random() })
+                ticketAmount++
+            }
         )
 
+    }
+}
 
+@Composable
+fun StackedEmojis(
+    modifier: Modifier = Modifier,
+    overLap: Float = .3f,
+    content: @Composable () -> Unit,
+) {
+    Layout(
+        content = content,
+        modifier = modifier
+    ) { measurables, constraints ->
+        val placeables = measurables.map { it.measure(constraints) }
+        val height = placeables.maxOf { it.height }
+        val width = placeables.maxOf { it.width }
+        /*  val height = placeables.maxOf { it.height }
+          val width = (placeables.subList(1, placeables.size)
+              .sumOf { it.width } * overLap + placeables[0].width).toInt()*/
+
+        val emojiSize = placeables.firstOrNull()?.width ?: 0
+        val overlap = (emojiSize * overLap).toInt() // Adjust overlap
+
+        val totalWidth = emojiSize // Keep the center aligned
+        val totalHeight = emojiSize
+
+        layout(width, height) {
+
+            var xPos: Int
+            placeables.forEachIndexed { index, placeable ->
+                xPos = when (placeables.size) {
+                    1 -> 0
+                    2 -> ((index - (placeables.size - 1) / 2f) * overlap).toInt()
+                    3 -> if (index == 1) 0 else ((index - (placeables.size - 1) / 2f) * overlap).toInt()
+                    else -> ((index - (placeables.size - 1) / 2f) * overlap).toInt()
+                }
+//                xPos =
+//                    if (placeables.size > 1) ((index - (placeables.size - 1) / 2f) * overlap).toInt() else 0
+                placeable.placeRelative(xPos, 0, if (index == 1) 1f else 0f)
+//                println("Composable Width: ${placeable.width} ------ Overlap: $overlap ------ Placeable size: ${placeables.size}")
+            }
+        }
+    }
+}
+
+
+@Composable
+fun TicketSelector(
+    modifier: Modifier = Modifier,
+    amount: Int,
+    onMinus: () -> Unit,
+    onPlus: () -> Unit
+) {
+    Row(
+        modifier.width(250.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(
+                    Color(0xFF34312F)
+                )
+                .clickable { onMinus() }, contentAlignment = Alignment.Center
+        ) {
+            Text("-", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+        }
+
+        /**
+         *  Gotten from
+         *  https://developer.android.com/develop/ui/compose/animation/composables-modifiers#animatedcontent
+         */
+        AnimatedContent(amount, transitionSpec = {
+            if (targetState > initialState) {
+                slideInVertically { height -> height } + fadeIn() togetherWith
+                        slideOutVertically { height -> -height } + fadeOut()
+            } else {
+                slideInVertically { height -> -height } + fadeIn() togetherWith
+                        slideOutVertically { height -> height } + fadeOut()
+            }.using(
+                SizeTransform(clip = false)
+            )
+        }, label = "Ticket selector") {
+            Text(it.toString(), fontWeight = FontWeight.Bold, fontSize = 28.sp)
+        }
+        Box(
+            Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(
+                    Color(0xFF34312F),
+                )
+                .clickable { onPlus() }, contentAlignment = Alignment.Center
+        ) {
+            Text("+", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+        }
     }
 }
 
@@ -359,7 +518,10 @@ private fun TittleAndDetail(modifier: Modifier = Modifier) {
 
 @Composable
 private fun DaysIndicator(daySelected: Int, onClicked: (Int) -> Unit) {
-    val days = listOf("T", "W", "T", "F")
+    println("After navigation, day selecte is: $daySelected")
+    val days = rememberSaveable {
+        listOf("T", "W", "T", "F")
+    }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         (11..15).forEachIndexed { index, it ->
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -371,7 +533,7 @@ private fun DaysIndicator(daySelected: Int, onClicked: (Int) -> Unit) {
                             if (daySelected == it) ActiveComponentColor else InactiveComponentColor
                         )
                         .clickable { /*daySelected = it */
-                            if (it != 15)
+                            if (it != 11 && it != 15)
                                 onClicked(it)
                         }, contentAlignment = Alignment.Center
                 ) {

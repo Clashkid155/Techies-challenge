@@ -63,7 +63,6 @@ fun NowShowingScreen(
                     modifier = Modifier
                         .rotate(90f)
                         .size(12.dp)
-//                        .align(Alignment.CenterVertically)
                 )
                 Spacer(Modifier.weight(0.8f))
                 Icon(Icons.Default.Face, null)
@@ -75,7 +74,7 @@ fun NowShowingScreen(
                 "Movie image",
                 modifier = Modifier
                     .sharedElement(
-                        rememberSharedContentState(key = "image"),
+                        rememberSharedContentState(key = "movie_logo"),
                         animatedVisibilityScope = animatedVisibilityScope,
 //                        placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize
 //                        enter = scaleIn() + fadeIn(),
