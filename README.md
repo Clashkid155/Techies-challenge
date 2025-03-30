@@ -4,7 +4,7 @@ UI interaction. Any stack was allowed so I went with Jetpack Compose!
 
 ## Preview
 
-![My version](media/mine.mp4)
+![Mine](media/mine.gif)
 
 ### Tech Stack:
 
