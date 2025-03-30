@@ -348,26 +348,17 @@ private fun WhoGoes(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            AnimatedContent(
-                gifIds,
-                Modifier
-                    .fillMaxWidth(),
-//                    .align(Alignment.CenterHorizontally),
-                transitionSpec = {
-                    fadeIn() togetherWith fadeOut()
-                }) { items ->
-
-                StackedEmojis(
-                    overLap = .35f,
-                ) {
-                    items.forEach { emoji ->
-                        key(emoji) {
-                            AsyncImage(
-                                model = emoji, null,
-                                imageLoader = gifEnabledLoader,
-                                modifier = Modifier
-                                    .size(160.dp)
-
+            StackedEmojis(
+                Modifier.fillMaxSize(.8f),
+                overLap = .35f,
+            ) {
+                gifIds.forEachIndexed { index, emoji ->
+                    key(index + emoji) {
+                        AsyncImage(
+                            model = emoji, null,
+                            imageLoader = gifEnabledLoader,
+                            modifier = Modifier
+//                                .size(100.dp)
 
                             )
                         }
@@ -384,12 +375,12 @@ private fun WhoGoes(
             ticketAmount,
             onMinus = {
                 if (gifIds.size <= 1) return@TicketSelector
-//                gifIds.removeAt(gifIds.lastIndex)
-                gifIds.removeAt(1)
+                gifIds.removeAt(gifIds.lastIndex)
+//                gifIds.removeAt(1)
                 ticketAmount--
             },
             onPlus = {
-                gifIds.add(1, availableGif.getOrElse(ticketAmount - 1) { availableGif.random() })
+                gifIds.add(availableGif.getOrElse(ticketAmount - 1) { availableGif.random() })
                 ticketAmount++
             }
         )
@@ -408,33 +399,36 @@ fun StackedEmojis(
         modifier = modifier
     ) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints) }
-        val height = placeables.maxOf { it.height }
+        //        val height = placeables.maxOf { it.height }
         val width = placeables.maxOf { it.width }
-        /*  val height = placeables.maxOf { it.height }
-          val width = (placeables.subList(1, placeables.size)
-              .sumOf { it.width } * overLap + placeables[0].width).toInt()*/
 
-        val emojiSize = placeables.firstOrNull()?.width ?: 0
-        val overlap = (emojiSize * overLap).toInt() // Adjust overlap
+        //        val emojiSize = placeables.firstOrNull()?.width ?: 0
+        val overlap = (width * overLap).toInt() // Adjust overlap
 
-        val totalWidth = emojiSize // Keep the center aligned
-        val totalHeight = emojiSize
+        layout(constraints.maxWidth, constraints.maxHeight) {
 
-        layout(width, height) {
-
-            var xPos: Int
             placeables.forEachIndexed { index, placeable ->
-                xPos = when (placeables.size) {
+
+                /// A few hacks to make the 3 main gifs look good
+                val xPos = when (placeables.size) {
                     1 -> 0
                     2 -> ((index - (placeables.size - 1) / 2f) * overlap).toInt()
-                    3 -> if (index == 1) 0 else ((index - (placeables.size - 1) / 2f) * overlap).toInt()
+                    3 -> if (index == 2) 0 else if (index == 1) (((placeables.size - 1) / 2f) * overlap).toInt() else ((index - (placeables.size - 1) / 2f) * overlap).toInt()
                     else -> ((index - (placeables.size - 1) / 2f) * overlap).toInt()
                 }
-//                xPos =
-//                    if (placeables.size > 1) ((index - (placeables.size - 1) / 2f) * overlap).toInt() else 0
-                placeable.placeRelative(xPos, 0, if (index == 1) 1f else 0f)
-//                println("Composable Width: ${placeable.width} ------ Overlap: $overlap ------ Placeable size: ${placeables.size}")
+
+                val zIndex =
+                    if (index == 0 && placeables.size == 2) {
+                        1f
+                    } else if (index == 3 && placeables.size == 3) {
+                        1f
+                    } else {
+                        0f
+                    }
+                placeable.placeRelative(xPos, 0, zIndex)
+                //                println("Loop index: ${index} ------------ Placeable size: ${placeables.size} -------- zIndex: $zIndex")
             }
+
         }
     }
 }
