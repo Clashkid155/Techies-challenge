@@ -56,7 +56,6 @@ fun NowShowingScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Now showing", fontSize = 20.sp)
                 Spacer(Modifier.width(8.dp))
-                //            Icon(Icons.Default.ArrowDropDown, null)
                 Icon(
                     painterResource(R.drawable.arrow),
                     null,
@@ -76,9 +75,6 @@ fun NowShowingScreen(
                     .sharedElement(
                         rememberSharedContentState(key = "movie_logo"),
                         animatedVisibilityScope = animatedVisibilityScope,
-//                        placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize
-//                        enter = scaleIn() + fadeIn(),
-//                        exit =  fadeOut()+scaleOut()
                     )
                     .fillMaxWidth()
                     .weight(.5f)

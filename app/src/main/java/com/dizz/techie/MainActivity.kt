@@ -1,6 +1,5 @@
 package com.dizz.techie
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,15 +23,14 @@ import com.dizz.techie.ui.screen.DateSelectorScreen
 import com.dizz.techie.ui.screen.NowShowingScreen
 import com.dizz.techie.ui.theme.Techie_1Theme
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+//@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
         setContent {
-            Techie_1Theme() {
-
+            Techie_1Theme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Start(
                         Modifier
@@ -41,7 +39,6 @@ class MainActivity : ComponentActivity() {
                                 top = innerPadding.calculateTopPadding(),
                                 bottom = innerPadding.calculateBottomPadding()
                             )
-//                        .background(Color.Black)
                     )
 
                 }
@@ -82,7 +79,6 @@ fun Start(modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     Techie_1Theme {
-//        Greeting("Android")
         Start(Modifier.fillMaxSize())
     }
 }

@@ -150,16 +150,6 @@ fun DateSelectorScreen(
                         .sharedElement(
                             rememberSharedContentState(key = "movie_logo"),
                             animatedVisibilityScope = animatedVisibilityScope,
-//                            placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize,
-
-                            /*   enter = expandVertically() + scaleIn(
-                                   tween(delayMillis = 90),
-                               ),
-                               resizeMode = *//*RemeasureToBounds,*//*
-                            ScaleToBounds(
-                                ContentScale.None,
-                                Alignment.BottomStart
-                            ),*/
                             zIndexInOverlay = 1f,
                             renderInOverlayDuringTransition = false,
                             clipInOverlayDuringTransition = sharedTransitionScope.OverlayClip(
@@ -167,21 +157,6 @@ fun DateSelectorScreen(
                             )
 
                         )
-//                        .wrapContentWidth(Alignment.Start)
-
-                        /* .sharedElement(sharedKey,
-                             animatedVisibilityScope = animatedVisibilityScope,
-                             placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize
-                       )*/
-
-                        /*  .sharedElement(
-                              sharedKey, animatedVisibilityScope = animatedVisibilityScope,
-  //                            renderInOverlayDuringTransition = false,
-                              boundsTransform = { _, _ -> tween() },
-                              zIndexInOverlay = 1f,
-                              placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize
-
-                          )*/
                         .width(120.dp)
                         .clip(
                             RoundedCornerShape(20.dp)
@@ -272,23 +247,6 @@ private fun WhenToWatch(
                         towards = AnimatedContentTransitionScope.SlideDirection.Up,
                         spring(dampingRatio = 0.85f)
                     ) togetherWith fadeOut()
-
-                    /* using
-                                                SizeTransform { initialSize, targetSize ->
-                                                    if (targetState) {
-                                                        keyframes {
-                                                            // Expand horizontally first.
-                                                            IntSize(targetSize.width, initialSize.height) at 150
-                                                            durationMillis = 300
-                                                        }
-                                                    } else {
-                                                        keyframes {
-                                                            // Shrink vertically first.
-                                                            IntSize(initialSize.width, targetSize.height) at 150
-                                                            durationMillis = 300
-                                                        }
-                                                    }
-                                                }*/
                 }
             }
         ) { changeScreen ->
@@ -316,7 +274,6 @@ private fun WhoGoes(
 ) {
 
     var ticketAmount by remember { mutableIntStateOf(1) }
-//    var showImage by remember { mutableStateOf(false) }
     val gifIds = remember { mutableListOf(R.drawable.smile) }
     val availableGif = listOf(R.drawable.sunglasses, R.drawable.head_blown)
 
@@ -332,15 +289,12 @@ private fun WhoGoes(
             }.build()
     }
 
-    /* LaunchedEffect(Unit) {
-         delay(5000)
-         showImage = true
-     }*/
+
     Column(modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
         Text("Who's going?", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
         Text("Select ticket amount", fontSize = 12.sp, color = Color.LightGray)
         Spacer(Modifier.weight(.3f))
-//        Spacer(Modifier.height(32.dp))
+
         Column(
             Modifier
                 .fillMaxSize()
@@ -357,13 +311,12 @@ private fun WhoGoes(
                         AsyncImage(
                             model = emoji, null,
                             imageLoader = gifEnabledLoader,
-                            modifier = Modifier
-//                                .size(100.dp)
+
 
                             )
-                        }
 
                     }
+
                 }
             }
         }
@@ -376,7 +329,6 @@ private fun WhoGoes(
             onMinus = {
                 if (gifIds.size <= 1) return@TicketSelector
                 gifIds.removeAt(gifIds.lastIndex)
-//                gifIds.removeAt(1)
                 ticketAmount--
             },
             onPlus = {
@@ -399,11 +351,9 @@ fun StackedEmojis(
         modifier = modifier
     ) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints) }
-        //        val height = placeables.maxOf { it.height }
         val width = placeables.maxOf { it.width }
-
-        //        val emojiSize = placeables.firstOrNull()?.width ?: 0
-        val overlap = (width * overLap).toInt() // Adjust overlap
+        // Adjust overlap
+        val overlap = (width * overLap).toInt()
 
         layout(constraints.maxWidth, constraints.maxHeight) {
 
@@ -426,7 +376,7 @@ fun StackedEmojis(
                         0f
                     }
                 placeable.placeRelative(xPos, 0, zIndex)
-                //                println("Loop index: ${index} ------------ Placeable size: ${placeables.size} -------- zIndex: $zIndex")
+                // println("Loop index: ${index} ------------ Placeable size: ${placeables.size} -------- zIndex: $zIndex")
             }
 
         }
@@ -500,7 +450,7 @@ private fun TittleAndDetail(modifier: Modifier = Modifier) {
         Spacer(Modifier.height(4.dp))
         Text("2025 • Animation • 96 min", fontSize = 12.sp, color = Color.LightGray)
         Row(
-            horizontalArrangement = Arrangement.Start,//Arrangement.spacedBy(8.dp, Alignment.Start),
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(painterResource(R.drawable.imdb_logo), null, modifier = Modifier.size(38.dp))
@@ -512,7 +462,6 @@ private fun TittleAndDetail(modifier: Modifier = Modifier) {
 
 @Composable
 private fun DaysIndicator(daySelected: Int, onClicked: (Int) -> Unit) {
-    println("After navigation, day selecte is: $daySelected")
     val days = rememberSaveable {
         listOf("T", "W", "T", "F")
     }
@@ -526,7 +475,7 @@ private fun DaysIndicator(daySelected: Int, onClicked: (Int) -> Unit) {
                         .background(
                             if (daySelected == it) ActiveComponentColor else InactiveComponentColor
                         )
-                        .clickable { /*daySelected = it */
+                        .clickable {
                             if (it != 11 && it != 15)
                                 onClicked(it)
                         }, contentAlignment = Alignment.Center
