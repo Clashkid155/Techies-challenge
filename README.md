@@ -6,6 +6,9 @@ UI interaction. Any stack was allowed so I went with Jetpack Compose!
 
 ![Mine](media/mine.gif)
 
+Grab the
+apk [here](https://github.com/Clashkid155/Techies-challenge/blob/main/app/release/techie.apk)
+
 ### Tech Stack:
 
 - Jetpack Compose – for the entire UI
